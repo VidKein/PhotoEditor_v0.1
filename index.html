@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uodet adoptiv imagen</title>
+    <style>
+    body{
+      margin: 0;
+      padding: 0;      
+    }
+    /*Switch menu*/
+    article ul {
+    padding: 0 5px 0;
+    margin-bottom: -1px;
+    overflow: hidden;
+}
+    article li {
+    float:left;
+    list-style: none;
+    margin: 0 2px;
+    }
+    article li abbr {
+        display: block;
+        padding: 4px 8px;
+        background: #F7F7F7;
+        font-size: 14px;
+        border: 1px solid #cccccc;
+        border-radius: 2px 2px 0 0;
+        cursor: pointer;
+        text-decoration: none;        
+    }
+    article .content {
+          clear: both;
+          display: none;
+          border: 1px solid #cccccc;
+          border-radius: 2px;
+          background: #F7F7F7;
+          height: 210px;
+          overflow: auto;
+          padding: 10px;
+    }
+    #dimension{
+      text-align: center;
+    }
+    /*Photo block*/
+    .fotoBlock{        
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #canvasResult{
+       width: 500px;
+       height: auto;
+     }   
+      /*Information Display Editing Block*/
+     .editBlock{
+       position: absolute;
+       top: 0;
+       right: 0;
+     }
+     .editBlock p, h3{
+       margin: 0;
+     }
+     input[type="number"]::-webkit-inner-spin-button,
+     input[type="number"]::-webkit-outer-spin-button {
+       -webkit-appearance: none;
+       -moz-appearance: none;
+       appearance: none;
+       margin: 0;       
+     }
+     input[type="number"] {
+       -moz-appearance: textfield;
+       width: 27px;
+     }
+</style>
+</head>
+<body>
+
+    <div class="fotoBlock">
+      <img id="img" src="">
+      <canvas id="canvasResult"></canvas>         
+    </div>  
+
+    <div class="editBlock">
+      <p>Histogram</p>
+      <div class="histogram">
+        <label>
+          <input name="rType" type="radio" id="typeValue"  checked/> Black-white
+        </label>
+        <label>
+          <input name="rType" type="radio" /> Color
+        </label>
+      </div>
+      <canvas id="canvasHistogram" width="256" height="150"></canvas>
+      <p>or select custom image:</p>
+      <input id="input" type="file" />
+      <div class="editFoto">
+      <article>
+           <form action="" id="reset">
+              <h3>Edit photo</h3>
+                <ul>
+                  <li><abbr class="links" onclick="openMenu(event, 'main')" id="mains" title="main">Main</abbr></li>
+                  <li><abbr class="links" onclick="openMenu(event, 'dimension')" id="dimensions" title="dimensions">Dimensions</abbr></li>
+                  <li><abbr class="links" onclick="openMenu(event, 'rotation')" id="rotations" title="rotation">Rotation</abbr></li>                  
+                </ul>
+              <div class="content" id="main">                          
+                  <p>Brightness</p>
+                  <div>            
+                <label>
+                  <input id="Brightness" type="range" name="range" min="-255" max="255" value="0" />        
+                  <input id="valueBrightness" type="number" min="-255" max="255" value="0"/>                            
+                </label>
+                  </div>
+                  <p>Contrast</p>
+                  <div>
+                <label>
+                  <input id="Contrast" type="range" name="range" min="-255" max="255" value="0"/>
+                  <input id="valueContrast" type="number" min="-255" max="255" value="0"/>              
+                </label>
+                    </div>
+                    <hr>
+                    <p>Saturation</p>
+                    <div>
+                <label>
+                  <input id="Saturation" type="range"  name="range" min="-255" max="255" value="0" />
+                  <input id="valueSaturation" type="number" min="-255" max="255" value="0"/>                
+                </label>  
+                    </div>
+                    <hr>
+                    <p>Sharp</p>
+                    <div>
+                <label>
+                  <input id="Sharp" type="range"  name="range" min="0.1" max="100" step="0.01" value="0" />
+                  <input id="valueSharp" type="number" min="0.1" max="100" step="1" value="0"/>
+                </label>  
+              </div>
+              </div>
+              <div class="content" id="dimension">       
+                <p>Resize:</p>
+                <div id="inputScale">
+                <input id="numWidth" type="number" name="rangeScale" value=""/>x<input class="closet" id="numHeight" type="number" name="rangeScale" value="" disabled/>
+                </div>
+                <div>
+                  <label>
+                    <input id="cbProportions" type="checkbox" checked/>Proportions
+                  </label>
+                </div>
+                <div>
+                  <p>Scale methods:</p>
+                  <select name="scaleVersion" id="scaleVersion" size="1">
+                    <option value="neighbor" selected>Nearest neighbor scaling</option>
+                    <option value="bilinear">Bilinear scaling</option>
+                    <option value="lanczos">Lanczos scaling</option>
+                  </select>    
+                </div>
+              </div>
+              <div class="content" id="rotation">
+                <p>Rotate</p>
+                <div class="radioBlock" id="radioBlock">
+                  <p><input type="radio" name="rotate" id="0" min="0" value="0" title="rotate 0deg"> - 0&#176;</p>
+                  <p><input type="radio" name="rotate" id="90l" value="90" title="rotate 90deg left"> - 90&#176;</p>
+                  <p><input type="radio" name="rotate" id="90r" value="-90" title="rotate 90deg right"> - 270&#176;</p>
+                  <p><input type="radio" name="rotate" id="180" value="180" title="rotate 180deg left"> - 180&#176;</p>
+                  <p><input type="radio" name="rotate" id="flip" value="270" title="mirror reflection"> - mirror</p>
+                  <p><input type="radio" name="rotate" id="arbitrary" value="arbitrary" title="arbitrary"> - <input type="number" name="degrees" id="degrees" placeholder="&#177;0-90&#176;" value="0" minlength="1" maxlength="3" min="-90"  max="90"></p>
+                </div>
+              </div>
+           </form>
+        </article>
+        <br>           
+          <button id="saveIMGBrauser">Save</button>  
+          <button type="reset" form="reset" id="resetButton">Reset</button>    
+    </div>
+</body>
+</html>
+<script>
+//animation button EditionMenu
+function openMenu(event, blockName) {
+    //Declare all variables
+    var i, tabcontent, tablinks;    
+    // Get all elements with class="content" and hide them   
+    var tabcontent = document.getElementsByClassName("content");    
+    for (var i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    //Get all elements with class="links" and remove the "active" class
+    var tablinks = document.getElementsByClassName("links");    
+    for (var i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    //Show the current tab and add the "active" class to the button that opened the tab
+    document.getElementById(blockName).style.display = "block";
+    event.currentTarget.className += " active";    
+}
+document.getElementById("mains").click();
+
+//Switch+input
+let checked = document.getElementById("cbProportions");
+let numWidth = document.getElementById("numWidth");
+let numHeight = document.getElementById("numHeight");
+let inputScale = document.getElementById("inputScale");   
+checked.addEventListener('click',function(){         
+        if (numHeight.className =="open") {
+          numHeight.className = "closet";
+          numHeight.disabled = true;            
+        } else {
+          numHeight.className = "open";  
+          numHeight.disabled = false;           
+        } 
+   })
+//Proportions
+inputScale.addEventListener('input',function (){
+  if (numHeight.className =="closet") {numHeight.value = Math.round(img.height * numWidth.value / img.width);}
+  const newWidth = numWidth.value;
+  const newHeight = numHeight.value;   
+})         
+
+//perform actions on Canvas
+function processImage(inImg) {
+      img.style.width = "500px";
+      img.style.height = "auto";
+      const width = inImg.width;
+      const height = inImg.height;
+      const src = new Uint32Array(inImg.data.buffer);// 32-bit processing+++
+  processCanvas('canvasResult', width, height, function (dst) {      
+   //sharp elements
+   //mix
+   let mixs = parseInt(mix.value) * 0.01;            
+   //Everything to work with the matrix
+   let kernel = [[0, -1, 0],//matrix
+                [-1, 5, -1],
+                [0, -1, 0]],
+   katet = Math.round(Math.sqrt(kernel.length))+1,//root 9=3
+   half = (katet * 0.5) | 0,//3*0.5=1.5 discard values ​​after the decimal point
+   offset = 0,//offset - coefficient
+   div = 1.0;//div - divider  
+   //Sharp   
+   //pixel processing
+   let i = 0;
+   for (let y = 0; y < height; y++) {
+       for (let x = 0; x < width; x++) {
+         let r = 0, g = 0, b = 0;
+         for (let sy = 0; sy < katet; sy++) {
+           const yy = Math.min(height - 1, Math.max(0, y + sy - half));
+           for (let sx = 0; sx < katet; sx++) {
+             const xx = Math.min(width - 1, Math.max(0, x + sx - half));
+             let pix = src[yy * width + xx];//processing information
+             r += ((pix & 0xFF) * kernel[sy][sx]);
+             g += ((((pix) >> 8) & 0xFF) * kernel[sy][sx]);
+             b += ((((pix) >> 16) & 0xFF) * kernel[sy][sx]);
+           }
+         }          
+         r = Math.min(255,Math.max(0, (r*mixs)+((src[y * width + x] )&0xFF)*(1-mixs) ))&0xFF;
+         g = Math.min(255, Math.max(0, (g*mixs)+(((src[y * width + x])>> 8)&0xFF)*(1-mixs) ))&0xFF;
+         b = Math.min(255, Math.max(0, (b*mixs)+(((src[y * width + x])>> 16)&0xFF)*(1-mixs) ))&0xFF;                       
+         const alfa = src[y * width + x] & 0xFF000000;
+        dst[i++] = alfa | (b << 16) | (g << 8) | r;//fill with changes               
+       }
+     }   
+
+  //brightness/contrast/saturation elements
+  let brightness = parseInt(document.getElementById("Brightness").value);
+  let contrast = parseInt(document.getElementById("Contrast").value)/250;
+  //saturation
+  let saturation = parseInt(document.getElementById("Saturation").value);
+  let max = (saturation < 0) ? 255 : 128;
+
+   //brightness/contrast/saturation
+      let avgGray = 0;
+      for (let i = 0; i < dst.length; i++) {
+        let r = src[i] & 0xFF;
+        let g = (src[i] >> 8) & 0xFF;
+        let b = (src[i] >> 16) & 0xFF;
+        avgGray += (r * 0.2126 + g * 0.7152 + b * 0.0722);
+      }
+      avgGray /= dst.length;
+
+      for (let i = 0; i < dst.length; i++) {   
+        let r = src[i] & 0xFF;
+        let g = (src[i] >> 8) & 0xFF;
+        let b = (src[i] >> 16) & 0xFF;
+
+        // Contrast
+        r += (r - avgGray) * contrast;
+        g += (g - avgGray) * contrast;
+        b += (b - avgGray) * contrast;
+        
+        // Brightness
+        r += brightness;
+        g += brightness;
+        b += brightness;      
+        
+        // Saturation
+        r += (r - avgGray) * saturation / max;
+        g += (g - avgGray) * saturation / max;
+        b += (b - avgGray) * saturation / max;
+
+        if (r > 255) r = 255;
+        else if (r < 0) r = 0;
+        if (g > 255) g = 255;
+        else if (g < 0) g = 0;
+        if (b > 255) b = 255;
+        else if (b < 0) b = 0;
+       
+      dst[i] = (src[i] & 0xFF000000) | (b << 16) | (g << 8) | r;//fill with changes      
+      }
+ 
+  
+  histogram(dst); //Histogram  
+}); 
+      
+} 
+
+function histogram(dst) {
+      //toggle histogram display
+      const isValueHistogram = document.getElementById('typeValue').checked; 
+
+      let histBrightness = (new Array(256)).fill(0);
+      let histR = (new Array(256)).fill(0);
+      let histG = (new Array(256)).fill(0);
+      let histB = (new Array(256)).fill(0);      
+      for (let i = 0; i < dst.length; i++) {
+        let r = dst[i] & 0xFF;
+        let g = (dst[i] >> 8) & 0xFF;
+        let b = (dst[i] >> 16) & 0xFF;
+        histBrightness[r]++;
+        histBrightness[g]++;
+        histBrightness[b]++;
+        histR[r]++;
+        histG[g]++;
+        histB[b]++;
+      }
+      
+      let maxBrightness = 0;
+      if (isValueHistogram) {
+        for (let i = 1; i < 256; i++) {
+          if (maxBrightness < histBrightness[i]) {
+            maxBrightness = histBrightness[i]
+          }
+        }
+      } else {
+        for (let i = 0; i < 256; i++) {
+          if (maxBrightness < histR[i]) {
+            maxBrightness = histR[i]
+          } else if (maxBrightness < histG[i]) {
+            maxBrightness = histG[i]
+          } else if (maxBrightness < histB[i]) {
+            maxBrightness = histB[i]
+          }
+        }
+      }
+      
+      const canvas = document.getElementById('canvasHistogram');
+      const ctxHistogramm = canvas.getContext('2d');
+      let guideHeight = 8;
+      let startY = (canvas.height - guideHeight);
+      let dx = canvas.width / 256;
+      let dy = startY / maxBrightness;
+      ctxHistogramm.lineWidth = dx;
+      ctxHistogramm.fillStyle = "#fff";
+      ctxHistogramm.fillRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = 0; i < 256; i++) {
+        let x = i * dx;
+        if (isValueHistogram) {
+          // Value
+          ctxHistogramm.strokeStyle = "#000000";
+          ctxHistogramm.beginPath();
+          ctxHistogramm.moveTo(x, startY);
+          ctxHistogramm.lineTo(x, startY - histBrightness[i] * dy);
+          ctxHistogramm.closePath();
+          ctxHistogramm.stroke(); 
+        } else {
+          // Red
+          ctxHistogramm.strokeStyle = "rgba(220,0,0,0.5)";
+          ctxHistogramm.beginPath();
+          ctxHistogramm.moveTo(x, startY);
+          ctxHistogramm.lineTo(x, startY - histR[i] * dy);
+          ctxHistogramm.closePath();
+          ctxHistogramm.stroke(); 
+          // Green
+          ctxHistogramm.strokeStyle = "rgba(0,210,0,0.5)";
+          ctxHistogramm.beginPath();
+          ctxHistogramm.moveTo(x, startY);
+          ctxHistogramm.lineTo(x, startY - histG[i] * dy);
+          ctxHistogramm.closePath();
+          ctxHistogramm.stroke(); 
+          // Blue
+          ctxHistogramm.strokeStyle = "rgba(0,0,255,0.5)";
+          ctxHistogramm.beginPath();
+          ctxHistogramm.moveTo(x, startY);
+          ctxHistogramm.lineTo(x, startY - histB[i] * dy);
+          ctxHistogramm.closePath();
+          ctxHistogramm.stroke(); 
+        }
+        // Guide
+        ctxHistogramm.strokeStyle = 'rgb(' + i + ', ' + i + ', ' + i + ')';
+        ctxHistogramm.beginPath();
+        ctxHistogramm.moveTo(x, startY);
+        ctxHistogramm.lineTo(x, canvas.height);
+        ctxHistogramm.closePath();
+        ctxHistogramm.stroke(); 
+      }
+}
+
+//Collecting information from the canvas element
+function getImageData(pictureView) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');    
+    const img = document.getElementById(pictureView);      
+    canvas.width = img.width;
+    canvas.height = img.height;
+    //enter the canvas data into the size input
+    numWidth.value = canvas.width;
+    numHeight.value = canvas.height;
+    context.drawImage(img, 0, 0);
+    return context.getImageData(0, 0, img.width, img.height);//an ImageData object that copies the pixel data of the specified rectangular area of ​​the canvas
+  }
+
+//output canvas with changes
+function processCanvas(canvasId, width, height, func) {    
+    const canvasSize = document.getElementById(canvasId);
+    canvasSize.width = width;
+    canvasSize.height = height;
+    const ctx = canvasSize.getContext('2d');
+    const outImg = ctx.createImageData(width, height);
+    const dst = new Uint32Array(outImg.data.buffer); 
+    func(dst);          
+    ctx.putImageData(outImg, 0, 0);//draws the data from the given ImageData object to the canvas
+  }
+
+//Uploading a photo (file) as a DOMelement
+document.getElementById('input').addEventListener('change', function() {    
+    if (this.files && this.files[0]) {
+      var img = document.getElementById('img');
+      img.src = URL.createObjectURL(this.files[0]);
+      img.className = this.files[0].name;
+      img.onload = update;
+    }
+  });
+//switch for histogram b/w/color
+let switchHistogram = document.getElementsByName("rType");
+for (let i = 0; i < switchHistogram.length; i++) { 
+  switchHistogram[i].addEventListener('change',()=>{  
+      update(switchHistogram[i]);  
+  });
+}
+
+//Adjusting Brightness/Contrast/Saturation/Sharp
+let rangeCanvas = document.getElementsByName("range");
+  for (let i = 0; i < rangeCanvas.length; i++) { 
+    let valueCanvas = document.getElementById("value"+rangeCanvas[i].id);
+    rangeCanvas[i].addEventListener('input',(e)=>{
+      update(valueCanvas.value = e.target.value);
+    });
+    valueCanvas.addEventListener('input',(e)=>{
+      update(rangeCanvas[i].value = e.target.value);
+    });
+  }
+  
+//Rotation
+  var degrees = document.getElementById("degrees");
+  let radioBlock = document.getElementById("radioBlock");
+  let inputRotation = radioBlock.getElementsByTagName("input");
+  let angle = 0;
+   for (let i = 0; i < inputRotation.length; i++) {        
+      inputRotation[i].addEventListener('change',function (){      
+        if (inputRotation[i].value!=="arbitrary") {
+            angle = parseInt(inputRotation[i].value);  
+          } else {
+            angle = inputRotation[i].value;  
+          }     
+          rotation(angle);          
+      });  
+    } 
+    
+//Reset button 
+let resetPages = document.getElementById("resetButton");
+  resetPages.addEventListener('click',function (){   
+    let inputSize = document.getElementsByName("range");     
+    for (let i = 0; i <= inputSize.length; i++)     
+    {update(inputSize[i].setAttribute("value", "0.1"));}
+    
+  })
+  
+//Sharpening
+let mix = document.getElementById("Sharp");
+mix.addEventListener("input", ()=>{update(mix);})  
+
+
+function update() {
+    processImage(getImageData('img'));               
+  } 
+  
+//Сохраняем  картинку в браузере
+  var canvasResult = document.getElementById('canvasResult');
+  var saveIMGBrauser = document.getElementById('saveIMGBrauser');
+  //Сохраняем на прямую
+  saveIMGBrauser.addEventListener("click", ()=>{saveImg()})
+  //Обшая функция сохранения
+  function saveImg() {
+    var dataURL = canvasResult.toDataURL("image/jpeg",1.0);//подгатавливаем данные для передачи  data:[<тип данных>][;base64],<данные>
+    var link = document.createElement("a");//создаем ссылку
+    document.body.appendChild(link); // Firefox требует, чтобы ссылка была в теле :(
+    link.href = dataURL;
+    link.download = img.className;
+    link.click();
+    document.body.removeChild(link);     
+    }   
+</script>
