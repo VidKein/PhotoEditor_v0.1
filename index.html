@@ -74,15 +74,38 @@
        -moz-appearance: textfield;
        width: 27px;
      }
+     #closetImg{
+       position: absolute;
+       top: 0;
+       left: 0;
+       margin: 2px;  
+       cursor: pointer;
+     }
+     #closetImg p{
+       margin: 0;  
+       padding: 5px;
+       background-color: red;     
+       }
+    #canvasHistogram{
+      margin:3px ;       
+      border: 1px solid #000;
+     }
+    .buttonEdit{
+      display: block;
+      text-align: center;
+      margin-top: -15px;
+    }  
 </style>
 </head>
 <body>
 
     <div class="fotoBlock">
-      <img id="img" src="">
+      <img id="imgPreload" src="">
       <canvas id="canvasResult"></canvas>         
     </div>  
-
+    <div id="closetImg">
+      <p title="закрыть">X</p> 
+    </div>
     <div class="editBlock">
       <p>Histogram</p>
       <div class="histogram">
@@ -94,7 +117,7 @@
         </label>
       </div>
       <canvas id="canvasHistogram" width="256" height="150"></canvas>
-      <p>or select custom image:</p>
+      <p>For select custom image:</p>
       <input id="input" type="file" />
       <div class="editFoto">
       <article>
@@ -169,13 +192,16 @@
               </div>
            </form>
         </article>
-        <br>           
+        <br>
+        <div class="buttonEdit">
           <button id="saveIMGBrauser">Save</button>  
-          <button type="reset" form="reset" id="resetButton">Reset</button>    
+          <button type="reset" form="reset" id="resetButton">Reset</button> 
+        </div>              
     </div>
 </body>
 </html>
 <script>
+/**Openedit**/  
 //animation button EditionMenu
 function openMenu(event, blockName) {
     //Declare all variables
@@ -195,71 +221,61 @@ function openMenu(event, blockName) {
     event.currentTarget.className += " active";    
 }
 document.getElementById("mains").click();
-
-//Switch+input
-let checked = document.getElementById("cbProportions");
-let numWidth = document.getElementById("numWidth");
-let numHeight = document.getElementById("numHeight");
-let inputScale = document.getElementById("inputScale");   
-checked.addEventListener('click',function(){         
-        if (numHeight.className =="open") {
-          numHeight.className = "closet";
-          numHeight.disabled = true;            
-        } else {
-          numHeight.className = "open";  
-          numHeight.disabled = false;           
-        } 
-   })
-//Proportions
-inputScale.addEventListener('input',function (){
-  if (numHeight.className =="closet") {numHeight.value = Math.round(img.height * numWidth.value / img.width);}
-  const newWidth = numWidth.value;
-  const newHeight = numHeight.value;   
-})         
-
-//perform actions on Canvas
-function processImage(inImg) {
-      img.style.width = "500px";
-      img.style.height = "auto";
-      const width = inImg.width;
-      const height = inImg.height;
-      const src = new Uint32Array(inImg.data.buffer);// 32-bit processing+++
-  processCanvas('canvasResult', width, height, function (dst) {      
-   //sharp elements
-   //mix
-   let mixs = parseInt(mix.value) * 0.01;            
-   //Everything to work with the matrix
-   let kernel = [[0, -1, 0],//matrix
-                [-1, 5, -1],
-                [0, -1, 0]],
-   katet = Math.round(Math.sqrt(kernel.length))+1,//root 9=3
-   half = (katet * 0.5) | 0,//3*0.5=1.5 discard values ​​after the decimal point
-   offset = 0,//offset - coefficient
-   div = 1.0;//div - divider  
-   //Sharp   
-   //pixel processing
-   let i = 0;
-   for (let y = 0; y < height; y++) {
-       for (let x = 0; x < width; x++) {
-         let r = 0, g = 0, b = 0;
-         for (let sy = 0; sy < katet; sy++) {
-           const yy = Math.min(height - 1, Math.max(0, y + sy - half));
-           for (let sx = 0; sx < katet; sx++) {
-             const xx = Math.min(width - 1, Math.max(0, x + sx - half));
-             let pix = src[yy * width + xx];//processing information
-             r += ((pix & 0xFF) * kernel[sy][sx]);
-             g += ((((pix) >> 8) & 0xFF) * kernel[sy][sx]);
-             b += ((((pix) >> 16) & 0xFF) * kernel[sy][sx]);
-           }
-         }          
-         r = Math.min(255,Math.max(0, (r*mixs)+((src[y * width + x] )&0xFF)*(1-mixs) ))&0xFF;
-         g = Math.min(255, Math.max(0, (g*mixs)+(((src[y * width + x])>> 8)&0xFF)*(1-mixs) ))&0xFF;
-         b = Math.min(255, Math.max(0, (b*mixs)+(((src[y * width + x])>> 16)&0xFF)*(1-mixs) ))&0xFF;                       
-         const alfa = src[y * width + x] & 0xFF000000;
-        dst[i++] = alfa | (b << 16) | (g << 8) | r;//fill with changes               
-       }
-     }   
-
+//canvas
+let canvas = document.getElementById("canvasResult"),
+context = canvas.getContext("2d"),
+//img
+imgPreload = document.getElementById("imgPreload"),  
+//closetImg
+closetImg = document.getElementById("closetImg");
+//Uploading a photo (file) as a DOMelement
+document.getElementById('input').addEventListener('change', function() {    
+    if (this.files && this.files[0]) {      
+      imgPreload.src = URL.createObjectURL(this.files[0]);
+      imgPreload.className = this.files[0].name;      
+    }
+});
+imgPreload.addEventListener("load",function loadImg() {
+  imgPreload.onload = actions();
+})
+/**Get/Input Imagen+Canvas**/  
+//Получаем данные изображения 
+function getImageData() {
+    //Получаем объект img+canvas      
+    const canvas = document.getElementById('canvasResult');
+    const context = canvas.getContext('2d');
+    const img = document.getElementById('imgPreload');  
+    //Задать размер канваса
+    canvas.width = img.width;
+    canvas.height = img.height;
+    //Отрисовать картинку
+    context.drawImage(img, 0, 0);
+    //заполняем инпут размерами конвас
+    numWidth.value = canvas.width;
+    numHeight.value = canvas.height;
+    //Получаем копию пиксельных данных для контекста холста
+    return context.getImageData(0, 0, img.width, img.height);//объект ImageData, который копирует пиксельные данные заданной прямоугольной области холста
+}
+//выводим canvas с изменениями
+function processCanvas(canvasId, width, height, func) {    
+    const canvasSize = document.getElementById(canvasId);
+    canvasSize.width = width;
+    canvasSize.height = height;
+    const ctx = canvasSize.getContext('2d');
+    //Создаем новый пустой объект ImageData
+    const outImg = ctx.createImageData(width, height);
+    const dst = new Uint32Array(outImg.data.buffer);     
+    func(dst);          
+    //Рисуем полученные пиксельные данные из заданного ImageData объекта на холст
+    ctx.putImageData(outImg, 0, 0);
+}
+/**Main**/
+//Edit CANVAS Brightness/Contrast/Saturation
+function editCanvasBCS(inImg) { 
+    const width = inImg.width;
+    const height = inImg.height;
+    const src = new Uint32Array(inImg.data.buffer);
+processCanvas('canvasResult', width, height, function (dst) { 
   //brightness/contrast/saturation elements
   let brightness = parseInt(document.getElementById("Brightness").value);
   let contrast = parseInt(document.getElementById("Contrast").value)/250;
@@ -304,209 +320,276 @@ function processImage(inImg) {
         if (b > 255) b = 255;
         else if (b < 0) b = 0;
        
-      dst[i] = (src[i] & 0xFF000000) | (b << 16) | (g << 8) | r;//fill with changes      
-      }
- 
-  
-  histogram(dst); //Histogram  
-}); 
-      
-} 
-
-function histogram(dst) {
-      //toggle histogram display
-      const isValueHistogram = document.getElementById('typeValue').checked; 
-
-      let histBrightness = (new Array(256)).fill(0);
-      let histR = (new Array(256)).fill(0);
-      let histG = (new Array(256)).fill(0);
-      let histB = (new Array(256)).fill(0);      
-      for (let i = 0; i < dst.length; i++) {
-        let r = dst[i] & 0xFF;
-        let g = (dst[i] >> 8) & 0xFF;
-        let b = (dst[i] >> 16) & 0xFF;
-        histBrightness[r]++;
-        histBrightness[g]++;
-        histBrightness[b]++;
-        histR[r]++;
-        histG[g]++;
-        histB[b]++;
-      }
-      
-      let maxBrightness = 0;
-      if (isValueHistogram) {
-        for (let i = 1; i < 256; i++) {
-          if (maxBrightness < histBrightness[i]) {
-            maxBrightness = histBrightness[i]
+      dst[i] = (src[i] & 0xFF000000) | (b << 16) | (g << 8) | r;//заполняем изменениями    
+      } 
+    histogram(dst); //Histogram  
+    });
+}
+//Edit CANVAS Sharp
+function editCanvasSharp(ctx, w, h, mix) {   
+  var weights = [0, -1, 0, -1, 5, -1, 0, -1, 0],//матрица
+    katet = Math.round(Math.sqrt(weights.length)),//корень 9=3
+    half = (katet * 0.5) | 0,//3*0.5=1.5 отбрасываем значения после запятой
+    dstData = ctx.createImageData(w, h),// Получаем данные. Формат: {data: [], width: xx, height: xx}
+    dstBuff = dstData.data,// 8-bit processing----
+    srcBuff = ctx.getImageData(0, 0, w, h).data, 
+    y = h,
+    dst = new Uint32Array(dstData.data.buffer);
+  while (y--) {
+      x = w;
+      while (x--) {
+          var sy = y,
+              sx = x,
+              dstOff = (y * w + x) * 4,
+              r = 0,
+              g = 0,
+              b = 0,
+              a = 0;
+          for (var cy = 0; cy < katet; cy++) {
+              for (var cx = 0; cx < katet; cx++) {
+                  var scy = sy + cy - half;
+                  var scx = sx + cx - half;
+                  if (scy >= 0 && scy < h && scx >= 0 && scx < w) {
+                      var srcOff = (scy * w + scx) * 4;
+                      var wt = weights[cy * katet + cx];
+                      r += srcBuff[srcOff] * wt;
+                      g += srcBuff[srcOff + 1] * wt;
+                      b += srcBuff[srcOff + 2] * wt;
+                      a += srcBuff[srcOff + 3] * wt;
+                  }
+              }
           }
-        }
-      } else {
-        for (let i = 0; i < 256; i++) {
-          if (maxBrightness < histR[i]) {
-            maxBrightness = histR[i]
-          } else if (maxBrightness < histG[i]) {
-            maxBrightness = histG[i]
-          } else if (maxBrightness < histB[i]) {
-            maxBrightness = histB[i]
-          }
-        }
+          dstBuff[dstOff] = r * mix + srcBuff[dstOff] * (1 - mix);
+          dstBuff[dstOff + 1] = g * mix + srcBuff[dstOff + 1] * (1 - mix);
+          dstBuff[dstOff + 2] = b * mix + srcBuff[dstOff + 2] * (1 - mix)
+          dstBuff[dstOff + 3] = srcBuff[dstOff + 3];          
       }
-      
-      const canvas = document.getElementById('canvasHistogram');
-      const ctxHistogramm = canvas.getContext('2d');
-      let guideHeight = 8;
-      let startY = (canvas.height - guideHeight);
-      let dx = canvas.width / 256;
-      let dy = startY / maxBrightness;
-      ctxHistogramm.lineWidth = dx;
-      ctxHistogramm.fillStyle = "#fff";
-      ctxHistogramm.fillRect(0, 0, canvas.width, canvas.height);
-      
-      for (let i = 0; i < 256; i++) {
-        let x = i * dx;
-        if (isValueHistogram) {
-          // Value
-          ctxHistogramm.strokeStyle = "#000000";
-          ctxHistogramm.beginPath();
-          ctxHistogramm.moveTo(x, startY);
-          ctxHistogramm.lineTo(x, startY - histBrightness[i] * dy);
-          ctxHistogramm.closePath();
-          ctxHistogramm.stroke(); 
-        } else {
-          // Red
-          ctxHistogramm.strokeStyle = "rgba(220,0,0,0.5)";
-          ctxHistogramm.beginPath();
-          ctxHistogramm.moveTo(x, startY);
-          ctxHistogramm.lineTo(x, startY - histR[i] * dy);
-          ctxHistogramm.closePath();
-          ctxHistogramm.stroke(); 
-          // Green
-          ctxHistogramm.strokeStyle = "rgba(0,210,0,0.5)";
-          ctxHistogramm.beginPath();
-          ctxHistogramm.moveTo(x, startY);
-          ctxHistogramm.lineTo(x, startY - histG[i] * dy);
-          ctxHistogramm.closePath();
-          ctxHistogramm.stroke(); 
-          // Blue
-          ctxHistogramm.strokeStyle = "rgba(0,0,255,0.5)";
-          ctxHistogramm.beginPath();
-          ctxHistogramm.moveTo(x, startY);
-          ctxHistogramm.lineTo(x, startY - histB[i] * dy);
-          ctxHistogramm.closePath();
-          ctxHistogramm.stroke(); 
-        }
-        // Guide
-        ctxHistogramm.strokeStyle = 'rgb(' + i + ', ' + i + ', ' + i + ')';
-        ctxHistogramm.beginPath();
-        ctxHistogramm.moveTo(x, startY);
-        ctxHistogramm.lineTo(x, canvas.height);
-        ctxHistogramm.closePath();
-        ctxHistogramm.stroke(); 
-      }
+  }  
+  ctx.putImageData(dstData, 0, 0);//рисует данные из заданного ImageData объекта на холст
+  histogram(dst);
 }
 
-//Collecting information from the canvas element
-function getImageData(pictureView) {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');    
-    const img = document.getElementById(pictureView);      
-    canvas.width = img.width;
-    canvas.height = img.height;
-    //enter the canvas data into the size input
-    numWidth.value = canvas.width;
-    numHeight.value = canvas.height;
-    context.drawImage(img, 0, 0);
-    return context.getImageData(0, 0, img.width, img.height);//an ImageData object that copies the pixel data of the specified rectangular area of ​​the canvas
-  }
-
-//output canvas with changes
-function processCanvas(canvasId, width, height, func) {    
-    const canvasSize = document.getElementById(canvasId);
-    canvasSize.width = width;
-    canvasSize.height = height;
-    const ctx = canvasSize.getContext('2d');
-    const outImg = ctx.createImageData(width, height);
-    const dst = new Uint32Array(outImg.data.buffer); 
-    func(dst);          
-    ctx.putImageData(outImg, 0, 0);//draws the data from the given ImageData object to the canvas
-  }
-
-//Uploading a photo (file) as a DOMelement
-document.getElementById('input').addEventListener('change', function() {    
-    if (this.files && this.files[0]) {
-      var img = document.getElementById('img');
-      img.src = URL.createObjectURL(this.files[0]);
-      img.className = this.files[0].name;
-      img.onload = update;
-    }
-  });
-//switch for histogram b/w/color
-let switchHistogram = document.getElementsByName("rType");
-for (let i = 0; i < switchHistogram.length; i++) { 
-  switchHistogram[i].addEventListener('change',()=>{  
-      update(switchHistogram[i]);  
-  });
-}
-
-//Adjusting Brightness/Contrast/Saturation/Sharp
+//Коректировка Brightness/Contrast/Saturation
 let rangeCanvas = document.getElementsByName("range");
   for (let i = 0; i < rangeCanvas.length; i++) { 
     let valueCanvas = document.getElementById("value"+rangeCanvas[i].id);
     rangeCanvas[i].addEventListener('input',(e)=>{
-      update(valueCanvas.value = e.target.value);
+      actions(valueCanvas.value = e.target.value);
     });
     valueCanvas.addEventListener('input',(e)=>{
-      update(rangeCanvas[i].value = e.target.value);
+      actions(rangeCanvas[i].value = e.target.value);
     });
-  }
-  
-//Rotation
-  var degrees = document.getElementById("degrees");
-  let radioBlock = document.getElementById("radioBlock");
-  let inputRotation = radioBlock.getElementsByTagName("input");
-  let angle = 0;
+  } 
+//Изменение резкости
+let mix = document.getElementById("Sharp");
+mix.addEventListener("input", ()=>{actions(mix);})  
+//Изменение положение картинки(Поворот)
+let degrees = document.getElementById("degrees"),
+    radioBlock = document.getElementById("radioBlock"),
+    inputRotation = radioBlock.getElementsByTagName("input"),
+    angle = 0;
    for (let i = 0; i < inputRotation.length; i++) {        
       inputRotation[i].addEventListener('change',function (){      
         if (inputRotation[i].value!=="arbitrary") {
-            angle = parseInt(inputRotation[i].value);  
+            angle = parseInt(inputRotation[i].value); 
           } else {
-            angle = inputRotation[i].value;  
-          }     
-          rotation(angle);          
+            angle = inputRotation[6].value;  
+          }  
+          actions(angle);          
       });  
-    } 
+    }
+/**Rotation**/
+//Rotation CANVAS
+function editCanvasRotation(angle){
+  let TO_RADIANS = Math.PI/180, 
+      width = imgPreload.width,
+      height = imgPreload.height;      
+     if (angle == 270) {
+        canvas.width = imgPreload.width;
+        canvas.height = imgPreload.height;          
+        context.scale(-1, 1);
+        context.translate(-canvas.width,0);        
+        context.drawImage(imgPreload,0,0);
+     } else {
+        var New_Height = Math.round(width * Math.abs(Math.sin(angle*TO_RADIANS)) + height * Math.abs(Math.cos(angle*TO_RADIANS)));
+        var New_Width = Math.round(width * Math.abs(Math.cos(angle*TO_RADIANS)) + height * Math.abs(Math.sin(angle*TO_RADIANS)));                
+        canvas.width = New_Width;
+        canvas.height = New_Height;  
+        var x = Math.round(New_Width/2);
+        var y = Math.round(New_Height/2);           
+        context.translate(x,y);            
+        context.rotate(angle * TO_RADIANS);       
+        context.drawImage(imgPreload, -(imgPreload.width/2), -(imgPreload.height/2)); 
+     } 
+}
+
+/**Dimensions**/
+//Switch+input
+let checked = document.getElementById("cbProportions"),
+    numWidth = document.getElementById("numWidth"),
+    numHeight = document.getElementById("numHeight"),
+    inputScale = document.getElementById("inputScale");
+/*numWidth.value = canvas.width;        
+numHeight.value = canvas.height;*/
+checked.addEventListener('click',function(){ 
+        if (numHeight.className =="open") {
+          numHeight.className = "closet";
+          numHeight.disabled = true;            
+        } else {
+          numHeight.className = "open";  
+          numHeight.disabled = false;           
+        } 
+})
+
+inputScale.addEventListener('input',function (){
+//Proportions
+  if (numHeight.className =="closet") {numHeight.value = Math.round(imgPreload.height * numWidth.value / imgPreload.width);}  
+  const newWidth = numWidth.value;
+  const newHeight = numHeight.value;    
+})
+
+/**Histogram**/
+//Гистограмма
+function histogram(dst) {
+  //переключаем отображения гистограммы
+  const isValueHistogram = document.getElementById('typeValue').checked; 
+    let histBrightness = (new Array(256)).fill(0);
+    let histR = (new Array(256)).fill(0);
+    let histG = (new Array(256)).fill(0);
+    let histB = (new Array(256)).fill(0);
+    for (let i = 0; i < dst.length; i++) {
+      let r = dst[i] & 0xFF;
+      let g = (dst[i] >> 8) & 0xFF;
+      let b = (dst[i] >> 16) & 0xFF;
+      histBrightness[r]++;
+      histBrightness[g]++;
+      histBrightness[b]++;
+      histR[r]++;
+      histG[g]++;
+      histB[b]++;
+    }
     
-//Reset button 
-let resetPages = document.getElementById("resetButton");
-  resetPages.addEventListener('click',function (){   
-    let inputSize = document.getElementsByName("range");     
-    for (let i = 0; i <= inputSize.length; i++)     
-    {update(inputSize[i].setAttribute("value", "0.1"));}
+    let maxBrightness = 0;
+    if (isValueHistogram) {
+      for (let i = 1; i < 256; i++) {
+        if (maxBrightness < histBrightness[i]) {
+          maxBrightness = histBrightness[i]
+        }
+      }
+    } else {
+      for (let i = 0; i < 256; i++) {
+        if (maxBrightness < histR[i]) {
+          maxBrightness = histR[i]
+        } else if (maxBrightness < histG[i]) {
+          maxBrightness = histG[i]
+        } else if (maxBrightness < histB[i]) {
+          maxBrightness = histB[i]
+        }
+      }
+    }
     
-  })
-  
-//Sharpening
-let mix = document.getElementById("Sharp");
-mix.addEventListener("input", ()=>{update(mix);})  
+    const canvas = document.getElementById('canvasHistogram');
+    const ctx = canvas.getContext('2d');
+    let guideHeight = 8;
+    let startY = (canvas.height - guideHeight);
+    let dx = canvas.width / 256;
+    let dy = startY / maxBrightness;
+    ctx.lineWidth = dx;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    for (let i = 0; i < 256; i++) {
+      let x = i * dx;
+      if (isValueHistogram) {
+        // Value
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY - histBrightness[i] * dy);
+        ctx.closePath();
+        ctx.stroke(); 
+      } else {
+        // Red
+        ctx.strokeStyle = "rgba(220,0,0,0.5)";
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY - histR[i] * dy);
+        ctx.closePath();
+        ctx.stroke(); 
+        // Green
+        ctx.strokeStyle = "rgba(0,210,0,0.5)";
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY - histG[i] * dy);
+        ctx.closePath();
+        ctx.stroke(); 
+        // Blue
+        ctx.strokeStyle = "rgba(0,0,255,0.5)";
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY - histB[i] * dy);
+        ctx.closePath();
+        ctx.stroke(); 
+      }
+      // Guide
+      ctx.strokeStyle = 'rgb(' + i + ', ' + i + ', ' + i + ')';
+      ctx.beginPath();
+      ctx.moveTo(x, startY);
+      ctx.lineTo(x, canvas.height);
+      ctx.closePath();
+      ctx.stroke(); 
+    }
+}
+
+//переключатель для гистограммы ч-б/цветное
+let switchHistogram = document.getElementsByName("rType");
+for (let i = 0; i < switchHistogram.length; i++) { 
+  switchHistogram[i].addEventListener('change',()=>{  
+    actions(switchHistogram[i]);  
+  });
+}
 
 
-function update() {
-    processImage(getImageData('img'));               
-  } 
-  
+/**Actions**/
+//Действия
+function actions() { 
+  let rotation = document.getElementById("rotation");                    
+    //Brightness/Contrast/Saturation  
+    editCanvasBCS(getImageData()); 
+    //резкость  
+    editCanvasSharp(context, canvas.width, canvas.height, parseInt(mix.value) * 0.01);    
+    //Поворот
+    rotation.onchange = (e)=>{      
+        if (e.target.checked == false) {          
+           editCanvasRotation(angle);
+        }else{editCanvasRotation(angle);}    
+    }    
+}
+
 //Сохраняем  картинку в браузере
-  var canvasResult = document.getElementById('canvasResult');
-  var saveIMGBrauser = document.getElementById('saveIMGBrauser');
+var canvasResult = document.getElementById('canvasResult'),
+saveIMGBrauser = document.getElementById('saveIMGBrauser');
   //Сохраняем на прямую
   saveIMGBrauser.addEventListener("click", ()=>{saveImg()})
   //Обшая функция сохранения
-  function saveImg() {
+function saveImg() {
     var dataURL = canvasResult.toDataURL("image/jpeg",1.0);//подгатавливаем данные для передачи  data:[<тип данных>][;base64],<данные>
     var link = document.createElement("a");//создаем ссылку
     document.body.appendChild(link); // Firefox требует, чтобы ссылка была в теле :(
     link.href = dataURL;
-    link.download = img.className;
+    link.download = imgPreload.className;
     link.click();
     document.body.removeChild(link);     
-    }   
+} 
+
+//exit Edit foto
+closetImg.addEventListener("click",()=>{window.location.reload();})
+//Кнопка Reset 
+let resetPages = document.getElementById("resetButton");
+  resetPages.addEventListener('click',function (){   
+    let inputSize = document.getElementsByName("range");
+    for (let i = 0; i <= inputSize.length; i++) 
+    {actions(inputSize[i].setAttribute("value", "0"));}
+  })  
+
 </script>
