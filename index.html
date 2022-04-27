@@ -22,33 +22,33 @@
     margin: 0 2px;
     }
     article li abbr {
-        display: block;
-        padding: 4px 8px;
-        background: #F7F7F7;
-        font-size: 14px;
-        border: 1px solid #cccccc;
-        border-radius: 2px 2px 0 0;
-        cursor: pointer;
-        text-decoration: none;        
+      display: block;
+      padding: 4px 8px;
+      background: #F7F7F7;
+      font-size: 14px;
+      border: 1px solid #cccccc;
+      border-radius: 2px 2px 0 0;
+      cursor: pointer;
+      text-decoration: none;        
     }
     article .content {
-          clear: both;
-          display: none;
-          border: 1px solid #cccccc;
-          border-radius: 2px;
-          background: #F7F7F7;
-          height: 210px;
-          overflow: auto;
-          padding: 10px;
+      clear: both;
+      display: none;
+      border: 1px solid #cccccc;
+      border-radius: 2px;
+      background: #F7F7F7;
+      height: 210px;
+      overflow: auto;
+      padding: 10px;
     }
     #dimension{
       text-align: center;
     }
     /*Photo block*/
     .fotoBlock{        
-        position: absolute;
-        top: 0;
-        left: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
       }
       #canvasResult{
        /*width: 500px;*/
@@ -56,9 +56,9 @@
      }   
       /*Information Display Editing Block*/
      .editBlock{
-       position: absolute;
-       top: 0;
-       right: 0;
+      position: absolute;
+      top: 0;
+      right: 0;
      }
      .editBlock p, h3{
        margin: 0;
@@ -94,12 +94,56 @@
       display: block;
       text-align: center;
       margin-top: -15px;
-    }  
+    } 
+/*LOADER*/
+@keyframes load {
+    0%{
+        opacity: 0.08;
+        font-size: 10px;
+ 				font-weight: 400;
+				filter: blur(5px);
+				letter-spacing: 3px;
+        }
+    100%{
+        opacity: 1;
+        font-size: 25px;
+ 				font-weight:600;
+ 				filter: blur(0);
+        }
+}
+#animate {display: none;}
+.animate {
+  display: none;
+  background-color: gray;
+  position: fixed;
+	display:flex;
+	justify-content: center;
+	align-items: center;
+	height:100%;
+	margin: auto;
+ 	width: 100%;
+ 	font-size:26px;
+	font-family: Helvetica, sans-serif, Arial;
+	animation: load 1.2s infinite 0s ease-in-out;
+	animation-direction: alternate;
+	text-shadow: 0 0 1px white;
+}
+.fotoBlock{
+	height: 96vh;
+}
+.loaded_hiding .animate {
+  transition: 0.3s opacity;
+  opacity: 1;
+}
+
 </style>
 </head>
 <body>
 
+
+
     <div class="fotoBlock">
+      <h2 class="animate" id="animate">Loading</h2>
       <img id="imgPreload" src="">
       <canvas id="canvasResult"></canvas>         
     </div>  
@@ -510,9 +554,8 @@ function editCanvasDimensions(inImg) {
         const alpha = interpolate(
             (a >> 24) & 0xff, (b >> 24) & 0xff,
             (c >> 24) & 0xff, (d >> 24) & 0xff,
-            xDiff, yDiff) >> 0;
-        
-        dst[dstOffset++] = (alpha << 24) | (blue << 16) | (green << 8) | red;
+            xDiff, yDiff) >> 0;        
+        dst[dstOffset++] = (alpha << 24) | (blue << 16) | (green << 8) | red;        
       }
     }      
     } else if(nameScaleVersion == "lanczos") {
@@ -589,8 +632,8 @@ function editCanvasDimensions(inImg) {
             b += ((pix >> 16) & 0xFF) * value;
             a += (((pix >> 24) & 0xFF)) * value;
           }
-        }
-        dst[((x + y3) >> 0)] = (a << 24) | (b << 16) | (g << 8) | r;
+        }        
+        dst[((x + y3) >> 0)] = (a << 24) | (b << 16) | (g << 8) | r;                
       }
     }      
     } else{
@@ -600,8 +643,8 @@ function editCanvasDimensions(inImg) {
         for (let y = 0; y < newHeight; y++) {
           let srcY = (y * dy) >> 0;
           for (let x = 0; x < newWidth; x++) {
-            let srcX = (x * dx) >> 0;
-            dst[y * newWidth + x] = src[srcY * width + srcX];
+            let srcX = (x * dx) >> 0;            
+            dst[y * newWidth + x] = src[srcY * width + srcX];                        
           }
         }
     }
