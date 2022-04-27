@@ -51,7 +51,7 @@
         left: 0;
       }
       #canvasResult{
-       width: 500px;
+       /*width: 500px;*/
        height: auto;
      }   
       /*Information Display Editing Block*/
@@ -201,7 +201,9 @@
 </body>
 </html>
 <script>
+
 /**Openedit**/  
+
 //animation button EditionMenu
 function openMenu(event, blockName) {
     //Declare all variables
@@ -227,7 +229,13 @@ context = canvas.getContext("2d"),
 //img
 imgPreload = document.getElementById("imgPreload"),  
 //closetImg
-closetImg = document.getElementById("closetImg");
+closetImg = document.getElementById("closetImg"),
+scaleVersion = document.getElementById("scaleVersion"), 
+nameScaleVersion;          
+  scaleVersion.addEventListener("change", function () {
+    nameScaleVersion = scaleVersion.value;
+    actions(nameScaleVersion);
+  });
 //Uploading a photo (file) as a DOMelement
 document.getElementById('input').addEventListener('change', function() {    
     if (this.files && this.files[0]) {      
@@ -236,9 +244,11 @@ document.getElementById('input').addEventListener('change', function() {
     }
 });
 imgPreload.addEventListener("load",function loadImg() {
-  imgPreload.onload = actions();
+  imgPreload.onload = actions();  
 })
+
 /**Get/Input Imagen+Canvas**/  
+
 //Получаем данные изображения 
 function getImageData() {
     //Получаем объект img+canvas      
@@ -269,7 +279,9 @@ function processCanvas(canvasId, width, height, func) {
     //Рисуем полученные пиксельные данные из заданного ImageData объекта на холст
     ctx.putImageData(outImg, 0, 0);
 }
+
 /**Main**/
+
 //Edit CANVAS Brightness/Contrast/Saturation
 function editCanvasBCS(inImg) { 
     const width = inImg.width;
@@ -398,7 +410,9 @@ let degrees = document.getElementById("degrees"),
           actions(angle);          
       });  
     }
+
 /**Rotation**/
+let rotations = document.getElementById("rotations");
 //Rotation CANVAS
 function editCanvasRotation(angle){
   let TO_RADIANS = Math.PI/180, 
@@ -424,13 +438,13 @@ function editCanvasRotation(angle){
 }
 
 /**Dimensions**/
+
 //Switch+input
 let checked = document.getElementById("cbProportions"),
     numWidth = document.getElementById("numWidth"),
     numHeight = document.getElementById("numHeight"),
-    inputScale = document.getElementById("inputScale");
-/*numWidth.value = canvas.width;        
-numHeight.value = canvas.height;*/
+    inputScale = document.getElementById("inputScale"),
+    dimensions = document.getElementById("dimensions");
 checked.addEventListener('click',function(){ 
         if (numHeight.className =="open") {
           numHeight.className = "closet";
@@ -441,12 +455,159 @@ checked.addEventListener('click',function(){
         } 
 })
 
-inputScale.addEventListener('input',function (){
-//Proportions
-  if (numHeight.className =="closet") {numHeight.value = Math.round(imgPreload.height * numWidth.value / imgPreload.width);}  
+
+//Формирование изображения
+function editCanvasDimensions(inImg) {  
+  const width = inImg.width;
+  const height = inImg.height;
+  const src = new Uint32Array(inImg.data.buffer);  
+  inputScale.addEventListener('input',function (){
+  if (numHeight.className =="closet") {numHeight.value = Math.round(imgPreload.height * numWidth.value / imgPreload.width);}
   const newWidth = numWidth.value;
-  const newHeight = numHeight.value;    
-})
+  const newHeight = numHeight.value;  
+  //Действия с конвас
+  processCanvas('canvasResult', newWidth, newHeight, function(dst) {
+  if (nameScaleVersion == "bilinear") {
+      //Bilinear scaling
+    function interpolate(a, b, c, d, width, height) {
+    return a * (1 - width) * (1 - height)
+        + b * width * (1 - height)
+        + c * (1 - width) * height
+        + d * width * height;
+    }
+    const xMax = (width - 1);
+    const yMax = (height - 1);
+    const dx = (xMax + 0.5) / newWidth;
+    const dy = (yMax + 0.5) / newHeight;
+    let dstOffset = 0;
+    for (let i = 0; i < newHeight; i++) {
+      for (let j = 0; j < newWidth; j++) {
+        const x = (dx * j) >> 0;
+        const y = (dy * i) >> 0;
+        const xDiff = (dx * j) - x;
+        const yDiff = (dy * i) - y;
+        const index = y * width + x;
+        // a b
+        // c d
+        const a = src[index];
+        const b = (x >= xMax) ? a : src[index + 1];
+        const c = (y >= yMax) ? a : src[index + width];
+        const d = (y >= yMax) ? b
+            : ((x >= xMax) ? c : (src[index + width + 1]));
+        
+        const red = interpolate(
+            a & 0xff, b & 0xff,
+            c & 0xff, d & 0xff,
+            xDiff, yDiff) >> 0;
+        const green = interpolate(
+            (a >> 8) & 0xff, (b >> 8) & 0xff,
+            (c >> 8) & 0xff, (d >> 8) & 0xff,
+            xDiff, yDiff) >> 0;
+        const blue = interpolate(
+            (a >> 16) & 0xff, (b >> 16) & 0xff,
+            (c >> 16) & 0xff, (d >> 16) & 0xff,
+            xDiff, yDiff) >> 0;
+        const alpha = interpolate(
+            (a >> 24) & 0xff, (b >> 24) & 0xff,
+            (c >> 24) & 0xff, (d >> 24) & 0xff,
+            xDiff, yDiff) >> 0;
+        
+        dst[dstOffset++] = (alpha << 24) | (blue << 16) | (green << 8) | red;
+      }
+    }      
+    } else if(nameScaleVersion == "lanczos") {
+    //Lanczos scaling
+    let filterSize = 1;//меняется 1,2,3
+    function lanczos(size, x) {
+      if (x >= size || x <= -size) return 0;
+      if (x === 0) return 1;
+      const xpi = x * Math.PI;
+      return size * Math.sin(xpi) * Math.sin(xpi / size) / (xpi * xpi);
+    }
+    function createCache(cachePrecision, filterSize) {
+    const cache = {};
+    const max = filterSize * filterSize * cachePrecision;
+    const iPrecision = 1.0 / cachePrecision;
+    for (let cacheKey = 0; cacheKey < max; cacheKey++) {
+      const value = lanczos(filterSize, Math.sqrt(cacheKey * iPrecision));
+      cache[cacheKey] = value < 0 ? 0 : value;
+    }
+     return cache;
+    };
+    const values = [];
+    const sx = newWidth / width;
+    const sy = newHeight / height;
+    const xMax = width - 1;
+    const yMax = height - 1;
+    const csx = Math.min(1, sx) * Math.min(1, sx);
+    const csy = Math.min(1, sy) * Math.min(1, sy);
+    const cachePrecision = 1000;
+    const cache = createCache(cachePrecision, filterSize);
+    let x1et, y1et;
+    let y = newHeight;
+    while (y--) {
+      const sourcePixelY = (y + 0.5) * (1.0 / sy);
+      let y1b = sourcePixelY - filterSize;
+      if (y1b < 0) y1b = 0;
+      let y1e = y1et = sourcePixelY + filterSize;
+      if (y1e != y1et) y1e = y1et + 1;
+      if (y1e > yMax) y1e = yMax;
+      const cy = y * (1.0 / newHeight) - sourcePixelY;
+      const y3 = y * newWidth;
+      let x = newWidth;
+      while (x--) {
+        const sourcePixelX = (x + 0.5) * (1.0 / sx);
+        let x1b = sourcePixelX - filterSize;
+        if (x1b < 0) x1b = 0;
+        let x1e = x1et = sourcePixelX + filterSize;
+        if (x1e != x1et) x1e = x1et + 1;
+        if (x1e > xMax) x1e = xMax;
+        const cx = x * (1.0 / newWidth) - sourcePixelX;
+        ///
+        let total = 0;
+        let i = 0;
+        for (let y1 = y1b >> 0; y1 <= y1e; y1++) {
+          const distanceY = (y1 + cy) * (y1 + cy) * csy;
+          for (let x1 = x1b >> 0; x1 <= x1e; x1++) {
+            total += values[i++] = cache[(((x1 + cx) * (x1 + cx) * csx + distanceY) * cachePrecision) >> 0] || 0;
+          }
+        }
+        total = 1.0 / total;
+        ///
+        let a = 0;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        i = 0;
+        for (let y1 = y1b >> 0; y1 <= y1e; y1++) {
+          const y2 = y1 * width;
+          for (let x1 = x1b >> 0; x1 <= x1e; x1++) {
+            const value = values[i++] * total;
+            const pix = src[((y2 + x1) >> 0)];
+            r += (pix & 0xFF) * value;
+            g += ((pix >> 8) & 0xFF) * value;
+            b += ((pix >> 16) & 0xFF) * value;
+            a += (((pix >> 24) & 0xFF)) * value;
+          }
+        }
+        dst[((x + y3) >> 0)] = (a << 24) | (b << 16) | (g << 8) | r;
+      }
+    }      
+    } else{
+      //Nearest neighbor scaling
+      const dx = width / newWidth;
+        const dy = height / newHeight;
+        for (let y = 0; y < newHeight; y++) {
+          let srcY = (y * dy) >> 0;
+          for (let x = 0; x < newWidth; x++) {
+            let srcX = (x * dx) >> 0;
+            dst[y * newWidth + x] = src[srcY * width + srcX];
+          }
+        }
+    }
+  });
+ });  
+}
 
 /**Histogram**/
 //Гистограмма
@@ -559,11 +720,18 @@ function actions() {
     //резкость  
     editCanvasSharp(context, canvas.width, canvas.height, parseInt(mix.value) * 0.01);    
     //Поворот
-    rotation.onchange = (e)=>{      
-        if (e.target.checked == false) {          
-           editCanvasRotation(angle);
-        }else{editCanvasRotation(angle);}    
-    }    
+    rotations.addEventListener("click",()=>{
+      rotation.onchange = (e)=>{      
+          if (e.target.checked == false) {          
+             editCanvasRotation(angle);
+          }else{editCanvasRotation(angle);}    
+      }    
+    })
+      
+
+    //Scale
+    dimensions.addEventListener('click',()=>{editCanvasDimensions(getImageData());})    
+    
 }
 
 //Сохраняем  картинку в браузере
