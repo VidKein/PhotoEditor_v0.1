@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uodet adoptiv imagen</title>
+    <title>Photo Editor_v_0.1</title>
     <style>
     body{
       margin: 0;
@@ -144,7 +144,7 @@
         <!--<h2 class="animate">Loading</h2>-->
       </div>
       <img id="imgPreload" src="">
-      <canvas id="canvasResult" name=""></canvas>         
+      <canvas id="canvasResult"></canvas>         
     </div>  
     <div id="closetImg">
       <p title="закрыть">X</p> 
@@ -230,7 +230,7 @@
                   <p><input type="radio" name="rotate" id="90r" value="-90" title="rotate 90deg right"> - 270&#176;</p>
                   <p><input type="radio" name="rotate" id="180" value="180" title="rotate 180deg left"> - 180&#176;</p>
                   <p><input type="radio" name="rotate" id="flip" value="270" title="mirror reflection"> - mirror</p>
-                  <p><input type="radio" name="rotate" id="arbitrary" value="arbitrary" title="arbitrary"> - <input type="number" name="degrees" id="degrees" placeholder="&#177;0-90&#176;" value="0" minlength="1" maxlength="3" min="-90"  max="90"></p>
+                  <p><input type="radio" name="rotate" id="arbitrary" value="arbitrary" title="arbitrary"> - <input type="number" name="degrees" id="degrees" placeholder="&#177;0-90&#176;" value="0" minlength="1" maxlength="3" min="-90"  max="90" disabled></p>
                 </div>
               </div>
            
@@ -321,7 +321,7 @@ function getImageData() {
     canvas.height = img.height;
     //Отрисовать картинку
     context.drawImage(img, 0, 0);
-    //заполняем инпут размерами конвас
+    //заполняем инпут размерами конвас в - Dimensions
     numWidth.value = canvas.width;
     numHeight.value = canvas.height;
     //Получаем копию пиксельных данных для контекста холста
@@ -339,6 +339,9 @@ function processCanvas(canvasId, width, height, func) {
     func(dst);          
     //Рисуем полученные пиксельные данные из заданного ImageData объекта на холст
     ctx.putImageData(outImg, 0, 0);
+    //добавляем стили для canvas
+    canvas.style.margin = "auto";  
+    canvas.style.backgroundColor = "grey";  
 }
 
 /**Main**/
@@ -462,13 +465,17 @@ let degrees = document.getElementById("degrees"),
     inputRotation = radioBlock.getElementsByTagName("input"),
     angle = 0;
    for (let i = 0; i < inputRotation.length; i++) {        
-      inputRotation[i].addEventListener('change',function (){      
-        if (inputRotation[i].value!=="arbitrary") {
-            angle = parseInt(inputRotation[i].value); 
+      inputRotation[i].addEventListener('change',function (){  
+          if (inputRotation[i].value == "arbitrary" || inputRotation[i].id == "degrees") {
+              inputRotation["degrees"].removeAttribute("disabled");
+              inputRotation["degrees"].addEventListener('input',function (){
+              angle = inputRotation["degrees"].value;                  
+            });              
           } else {
-            angle = inputRotation[6].value;  
+            angle = parseInt(inputRotation[i].value);
+            inputRotation["degrees"].setAttribute("disabled","");
           }  
-          actions(angle);          
+        actions(angle);          
       });  
     }
 
@@ -517,7 +524,7 @@ checked.addEventListener('click',function(){
 })
 
 //Dimensions
-function editCanvasDimensions(inImg) {  
+function editCanvasDimensions(inImg) {    
   const width = inImg.width;
   const height = inImg.height;
   const src = new Uint32Array(inImg.data.buffer);  
@@ -826,6 +833,7 @@ let resetPages = document.getElementById("resetButton");
       }
       //rotations
       document.getElementsByName("rotate")[0].checked = true;
+      inputRotation[6].setAttribute("disabled","");
       editCanvasRotation(angle=0)
       //удаляем метку для сохранения картинки
       canvas.removeAttribute("class");
