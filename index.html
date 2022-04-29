@@ -305,6 +305,11 @@ imgPreload.addEventListener("load",function loadImg() {
 
 /**Get/Input Imagen+Canvas**/  
 
+//Маркер для переноса информации с измененного cavasa
+let content = document.getElementsByClassName("content");
+for (let i = 0; i < content.length; i++) {  
+  content[i].addEventListener("click", ()=>{canvas.className = imgPreload.className});  
+}
 //Получаем данные изображения 
 function getImageData() {
     //Получаем объект img+canvas      
@@ -766,6 +771,7 @@ for (let i = 0; i < switchHistogram.length; i++) {
 
 
 /**Actions**/
+
 //Действия
 function actions() { 
   let rotation = document.getElementById("rotation");                    
@@ -781,10 +787,8 @@ function actions() {
           }else{editCanvasRotation(angle);}    
       }    
     })
-
     //Scale
-    dimensions.addEventListener('click',()=>{editCanvasDimensions(getImageData());})   
-    
+    dimensions.addEventListener('click',()=>{editCanvasDimensions(getImageData());})      
 }
 //Сохраняем  картинку в браузере
 var canvasResult = document.getElementById('canvasResult'),
@@ -823,14 +827,16 @@ let resetPages = document.getElementById("resetButton");
       //rotations
       document.getElementsByName("rotate")[0].checked = true;
       editCanvasRotation(angle=0)
-    }
+      //удаляем метку для сохранения картинки
+      canvas.removeAttribute("class");
+    }    
   })  
 /**Loader**/
 //Loader
 /*
 function loaderAction() {      
   let loaderAction = document.getElementById('loaded_hiding');  
-  loaderAction.style.opacity ="0";
-  }    
-  setTimeout(loaderAction,1000);*/
+  loaderAction.style.opacity ="1";
+  }
+setTimeout(loaderAction,1000);*/  
 </script>
