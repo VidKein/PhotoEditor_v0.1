@@ -7,15 +7,20 @@
     <title>Photo Editor_v_0.1</title>
     <style>
     body{
+      position: absolute;    
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
       margin: 0;
-      padding: 0;      
+      padding: 0;
     }
     /*Switch menu*/
     article ul {
     padding: 0 5px 0;
     margin-bottom: -1px;
     overflow: hidden;
-}
+    }
     article li {
     float:left;
     list-style: none;
@@ -44,16 +49,37 @@
     #dimension{
       text-align: center;
     }
+
     /*Photo block*/
     .fotoBlock{        
-      position: absolute;
-      top: 0;
-      left: 0;
+      margin-right: 28%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-evenly;
+      align-content: space-around;
+      height: 100%;    
+      overflow: auto;  
+    }
+    #imgPreload{
+      position: fixed;
+    }
+    #canvasResult{
+      max-width: 500px;
+      height: auto;
+    }    
+    /*Функционал*/
+    .leftMiddleArea{
+       position: absolute;
+       left: 25px;
+       width: 25px;                   
+       cursor: pointer;
       }
-      #canvasResult{
-       /*width: 500px;*/
-       height: auto;
-     }   
+    .chapter {
+      height: 0.5rem;
+      border-top: 2px solid rgba(0,0,0,.3);
+    } 
+
       /*Information Display Editing Block*/
      .editBlock{
       position: absolute;
@@ -140,15 +166,26 @@
 </head>
 <body>
     <div class="fotoBlock">
-      <div id="loaded_hiding">
-        <!--<h2 class="animate">Loading</h2>-->
+      <div class="leftMiddleArea">
+        <div class="chapter"></div>
+        <img src="./icons/zoom-plus.svg" alt="zoom plus" title="zoom plus">
+        <div class="chapter"></div>
+        <img src="./icons/zoom-minus.svg" alt="zoom minus" title="zoom minus">
+        <div class="chapter"></div>
+        <img src="./icons/flip.svg" alt="Control view" title="Control view">
+        <div class="chapter"></div>
       </div>
-      <img id="imgPreload" src="">
-      <canvas id="canvasResult"></canvas>         
-    </div>  
+      <!--<div id="loaded_hiding">
+        <h2 class="animate">Loading</h2>
+      </div>-->          
+      <img id="imgPreload" src="./icons/pre-see.svg">   
+      <canvas id="canvasResult"></canvas>                      
+    </div> 
+
     <div id="closetImg">
       <p title="закрыть">X</p> 
     </div>
+
     <div class="editBlock">
       <p>Histogram</p>
       <div class="histogram">
@@ -157,7 +194,7 @@
         </label>
         <label>
           <input name="rType" type="radio" /> Color
-        </label>
+        </label>        
       </div>
       <canvas id="canvasHistogram" width="256" height="150"></canvas>
       <p>For select custom image:</p>
@@ -296,11 +333,20 @@ document.getElementById("mains").click();
 document.getElementById('input').addEventListener('change', function() {    
     if (this.files && this.files[0]) {      
       imgPreload.src = URL.createObjectURL(this.files[0]);
-      imgPreload.className = this.files[0].name;      
+      imgPreload.className = this.files[0].name; 
+      //убираем поправку если загружаем картинку без перезагрузки страницы
+      imgPreload.style.top = "";
     }
 });
 imgPreload.addEventListener("load",function loadImg() {
-  imgPreload.onload = actions();  
+  imgPreload.onload = actions(); 
+  //делаем невидимым картинку
+  imgPreload.style.opacity = "0";
+  //вводим поправку на коэфициент сторон
+  let sideRatio = imgPreload.width/imgPreload.height;
+  if (sideRatio < 1) {
+    imgPreload.style.top = "0";
+  }  
 })
 
 /**Get/Input Imagen+Canvas**/  
@@ -338,10 +384,7 @@ function processCanvas(canvasId, width, height, func) {
     const dst = new Uint32Array(outImg.data.buffer);     
     func(dst);          
     //Рисуем полученные пиксельные данные из заданного ImageData объекта на холст
-    ctx.putImageData(outImg, 0, 0);
-    //добавляем стили для canvas
-    canvas.style.margin = "auto";  
-    canvas.style.backgroundColor = "grey";  
+    ctx.putImageData(outImg, 0, 0); 
 }
 
 /**Main**/
@@ -466,14 +509,20 @@ let degrees = document.getElementById("degrees"),
     angle = 0;
    for (let i = 0; i < inputRotation.length; i++) {        
       inputRotation[i].addEventListener('change',function (){  
-          if (inputRotation[i].value == "arbitrary" || inputRotation[i].id == "degrees") {
+          if (inputRotation[i].value == "arbitrary" || inputRotation[i].id == "degrees") {              
               inputRotation["degrees"].removeAttribute("disabled");
               inputRotation["degrees"].addEventListener('input',function (){
-              angle = inputRotation["degrees"].value;                  
+              angle = inputRotation["degrees"].value;
+              //добавляем стили для canvas
+              canvas.style.margin = "auto";  
+              canvas.style.backgroundColor = "grey"; 
             });              
           } else {
             angle = parseInt(inputRotation[i].value);
             inputRotation["degrees"].setAttribute("disabled","");
+            //удаляем стили для canvas
+            canvas.style.margin = "";  
+            canvas.style.backgroundColor = ""; 
           }  
         actions(angle);          
       });  
