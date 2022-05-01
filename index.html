@@ -58,56 +58,121 @@
       align-items: center;
       justify-content: space-evenly;
       align-content: space-around;
-      height: 100%;    
-      overflow: auto;  
-    }
+      height: 100%;   
+      /*Вид отображения результата*/
+      --thumb-bgc-focus: hsla(0, 70%, 70%, 0.7);
+      --thumb-bgc: hsl(0deg 100% 47% / 56%);
+      --thumb-w: 0.2rem;
+    } 
     #imgPreload{
-      position: fixed;
+      position: fixed;         
+      /*Вид отображения результата*/
+      clip-path: polygon(0% 0%, var(--value) 0%, var(--value) 100%, 0% 100%);
     }
     #canvasResult{
       max-width: 500px;
       height: auto;
-    }    
+      /*Вид отображения результата*/
+      clip-path: polygon(100% 0%, var(--value) 0%, var(--value) 100%, 100% 100%);
+    } 
+           
     /*Функционал*/
     .leftMiddleArea{
        position: absolute;
        left: 25px;
        width: 25px;                   
        cursor: pointer;
-      }
+       text-align: center;
+       padding: 5px;
+      }       
     .chapter {
       height: 0.5rem;
       border-top: 2px solid rgba(0,0,0,.3);
     } 
-
-      /*Information Display Editing Block*/
-     .editBlock{
+    .activeFunctiom{
+      background-color: rgba(255, 0, 0, 0.418);
+    }
+    /*Регулятор отображения изменений -  main*/    
+    .c-compare__range{
+      appearance: none;
+      display: none;
+    }
+    .c-compare__range {
+      background-color: transparent;
+      box-sizing: border-box;
+      font-family: inherit;
+      height: 100%;
+      margin: 0;
+      outline: none;
+      position: absolute;
+      top: 0;
+      width: 500px;
+    }
+    .c-compare__range::-moz-range-thumb {
+      background-color: var(--thumb-bgc);
+      cursor: ew-resize;
+      height: 100%;  
+      width: var(--thumb-w);
+    }
+    .c-compare__range::-webkit-slider-thumb {
+      background-color: var(--thumb-bgc);
+      cursor: ew-resize;
+      height: 100%;  
+      width: var(--thumb-w);
+    }
+    .c-compare__range:focus::-webkit-slider-thumb {
+      background-color: var(--thumb-bgc-focus);
+      box-shadow: 0 0 0 3px var(--thumb-bgc);
+    }
+    .c-compare__range:focus::-moz-range-thumb {
+      background-color: var(--thumb-bgc-focus);
+      box-shadow: 0 0 0 3px var(--thumb-bgc);
+    }
+    .c-compare__range::-moz-range-track {
+      background: transparent;
+      background-size: 100%;
+      box-sizing: border-box;
+    }
+    .c-compare__range::-webkit-slider-runnable-track {
+      background: transparent;
+      background-size: 100%;
+      box-sizing: border-box;
+      height: 100%;
+    }
+    .c-compare__range,
+    .c-compare__range::-webkit-slider-runnable-track,
+    .c-compare__range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    /*Information Display Editing Block*/
+    .editBlock{
       position: absolute;
       top: 0;
       right: 0;
      }
-     .editBlock p, h3{
+    .editBlock p, h3{
        margin: 0;
      }
-     input[type="number"]::-webkit-inner-spin-button,
-     input[type="number"]::-webkit-outer-spin-button {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
        -webkit-appearance: none;
        -moz-appearance: none;
        appearance: none;
        margin: 0;       
      }
-     input[type="number"] {
+    input[type="number"] {
        -moz-appearance: textfield;
        width: 27px;
      }
-     #closetImg{
+    #closetImg{
        position: absolute;
        top: 0;
        left: 0;
        margin: 2px;  
        cursor: pointer;
      }
-     #closetImg p{
+    #closetImg p{
        margin: 0;  
        padding: 5px;
        background-color: red;     
@@ -165,21 +230,22 @@
 </style>
 </head>
 <body>
-    <div class="fotoBlock">
+    <div class="fotoBlock" id="fotoBlock" style="--value:0%;">
       <div class="leftMiddleArea">
         <div class="chapter"></div>
-        <img src="./icons/zoom-plus.svg" alt="zoom plus" title="zoom plus">
+        <img src="./icons/zoom-plus.svg" alt="zoom plus" title="zoom plus" id="zoomPlus" class="elementLeftPanel">
         <div class="chapter"></div>
-        <img src="./icons/zoom-minus.svg" alt="zoom minus" title="zoom minus">
+        <img src="./icons/zoom-minus.svg" alt="zoom minus" title="zoom minus" id="zoomMinus" class="elementLeftPanel">
         <div class="chapter"></div>
-        <img src="./icons/flip.svg" alt="Control view" title="Control view">
+        <img src="./icons/flip.svg" alt="control view" title="Control view" id="controlView" class="elementLeftPanel">
         <div class="chapter"></div>
       </div>
       <!--<div id="loaded_hiding">
         <h2 class="animate">Loading</h2>
       </div>-->          
-      <img id="imgPreload" src="./icons/pre-see.svg">   
+      <img id="imgPreload" class="imgPreload" src="./icons/pre-see.svg">      
       <canvas id="canvasResult"></canvas>                      
+      <input type="range" id="compareRange" class="c-rng c-compare__range" min="0" max="100" value="50" oninput="this.parentNode.style.setProperty('--value', `${this.value}%`)" />   
     </div> 
 
     <div id="closetImg">
@@ -293,7 +359,9 @@ imgPreload = document.getElementById("imgPreload"),
 closetImg = document.getElementById("closetImg"),
 //Metod Scale
 scaleVersion = document.getElementById("scaleVersion"), 
-nameScaleVersion;
+nameScaleVersion,
+//Funshional left panel
+nameLeftPanel;
 
 //animation button EditionMenu
 function openMenu(event, blockName) {
@@ -312,7 +380,9 @@ function openMenu(event, blockName) {
     //Show the current tab and add the "active" class to the button that opened the tab
     document.getElementById(blockName).style.display = "block";
     event.currentTarget.className += " active";
-    //Маркер для определения какие действия производим - main/dimension/rotation
+    //Маркер для определения какие действия производим - main/dimension/rotation   
+    nameLeftPanel = blockName;
+    LeftPanel(nameLeftPanel);
     switch (blockName) {
       case 'main': canvas.setAttribute('name', 'main') ;      
         break;
@@ -320,32 +390,41 @@ function openMenu(event, blockName) {
         break;  
       case 'rotation': canvas.setAttribute('name','rotation');      
         break; 
-    }    
+    }        
 }
 document.getElementById("mains").click();
-
 //Metod Scale          
   scaleVersion.addEventListener("change", function () {
-    nameScaleVersion = scaleVersion.value;
+    nameScaleVersion = scaleVersion.value;    
     actions(nameScaleVersion);
-  });
+  });  
 //Uploading a photo (file) as a DOMelement
 document.getElementById('input').addEventListener('change', function() {    
     if (this.files && this.files[0]) {      
       imgPreload.src = URL.createObjectURL(this.files[0]);
       imgPreload.className = this.files[0].name; 
       //убираем поправку если загружаем картинку без перезагрузки страницы
+      canvas.style.position = "";
+      canvas.style.top = "";
+
+      imgPreload.style.position = "fixed";
       imgPreload.style.top = "";
+      imgPreload.style.width = "";
     }
 });
 imgPreload.addEventListener("load",function loadImg() {
-  imgPreload.onload = actions(); 
+  imgPreload.onload = actions();   
   //делаем невидимым картинку
   imgPreload.style.opacity = "0";
   //вводим поправку на коэфициент сторон
   let sideRatio = imgPreload.width/imgPreload.height;
   if (sideRatio < 1) {
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+
+    imgPreload.style.position = "absolute";
     imgPreload.style.top = "0";
+    imgPreload.style.width = "500px";
   }  
 })
 
@@ -354,7 +433,9 @@ imgPreload.addEventListener("load",function loadImg() {
 //Маркер для переноса информации с измененного cavasa
 let content = document.getElementsByClassName("content");
 for (let i = 0; i < content.length; i++) {  
-  content[i].addEventListener("click", ()=>{canvas.className = imgPreload.className});  
+  content[i].addEventListener("click", ()=>{
+    canvas.className = imgPreload.className;    
+  });
 }
 //Получаем данные изображения 
 function getImageData() {
@@ -825,6 +906,36 @@ for (let i = 0; i < switchHistogram.length; i++) {
   });
 }
 
+//LeftPanel
+function LeftPanel() {  
+  let all = document.getElementsByClassName("elementLeftPanel"),
+      zoomPlus = document.getElementById("zoomPlus"),
+      zoomMinus = document.getElementById("zoomMinus"),
+      controlView = document.getElementById("controlView"),
+      compareRange = document.getElementById("compareRange");
+  //controlView  
+  controlView.addEventListener("click", function() {
+      this.classList.toggle("activeFunctiom");
+      //Панель сравнительного просмотра изменений       
+      if (controlView.className == "elementLeftPanel activeFunctiom") {
+        //показываем индикатор изменений   
+        compareRange.style.display = "block";      
+        //показываем картинку предпросмотра
+        imgPreload.style.opacity = "1"; 
+        document.getElementById("fotoBlock").style.setProperty('--value', `50%`);      
+      } else{
+        //убираем индикатор изменений   
+        compareRange.style.display = "none";      
+        //скрываем картинку предпросмотра
+        imgPreload.style.opacity = "0";              
+        document.getElementById("fotoBlock").style.setProperty('--value', `0%`);   
+        /*console.log("This functionality is not available in this section");*/           
+      }
+    });
+  
+
+}
+
 
 /**Actions**/
 
@@ -844,7 +955,7 @@ function actions() {
       }    
     })
     //Scale
-    dimensions.addEventListener('click',()=>{editCanvasDimensions(getImageData());})      
+    dimensions.addEventListener('click',()=>{editCanvasDimensions(getImageData());})         
 }
 //Сохраняем  картинку в браузере
 var canvasResult = document.getElementById('canvasResult'),
