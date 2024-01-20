@@ -1,4 +1,5 @@
-Photo Editor. First level(version 0.1).
+Photo Editor.
+First level(version 0.1).
 The work of the editor is based on the principle of pixel image processing.
 The change takes place in the "canvas".
 It consists of three blocks:
